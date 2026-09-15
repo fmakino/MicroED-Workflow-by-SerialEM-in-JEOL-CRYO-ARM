@@ -1,4 +1,4 @@
-# MicroED continuous-rotation acquisition with SerialEM
+# MicroED continuous-rotation acquisition with SerialEM on JEOL CRYO ARM
 
 [日本語版](README_ja.md)
 
