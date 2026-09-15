@@ -156,11 +156,12 @@ To end a Navigator run, the source workflow specifies **End Navigator**, not **S
 
 ## Acknowledgements
 
-The workflow was refered from *230901-CRYOARM200_microED_マニュアル* by Naruhiko Adachi. That manual acknowledges contributions from Fumiaki Makino, Haruaki Yanagisawa, Takanori Nakane, Akihiro Kawamoto, and Yusuke Yamada.
+The workflow was refered from *CRYOARM200_microED_マニュアル* by Naruhiko Adachi. 
+This workflow acknowledges contributions from Fumiaki Makino, Haruaki Yanagisawa, Takanori Nakane, Naruhiko Adachi, Akihiro Kawamoto, and Yusuke Yamada.
 
 ## References and code provenance
 
-This workflow was developed with reference to the following:
+These scripts were developed with reference to the following:
 - CRmov ver. 1.1, 2019-03-02, M. Jason de la Cruz, MSKCC.
 - Takaba, K. et al., Journal of Structural Biology (2020).
 
