@@ -1,0 +1,350 @@
+MacroName MicroEDContinuousRotation
+
+# Continuous-rotation MicroED acquisition with SerialEM
+# for JEOL CRYO ARM systems.
+#
+# Acquisition is performed directly with TiltDuringRecord.
+
+ProgramTimeStamps
+
+# --------------------------------------------------
+# Acquisition parameters
+# --------------------------------------------------
+
+angleBegin = -30
+angleFinish = 30
+
+cameraBinning = 2
+secondsPerFrame = 0.5
+degreesPerSecond = 1.0
+
+# JEOL stage-speed index used by TiltDuringRecord
+stageRateIndex = 102
+
+preAcquisitionWait = 2
+stageSettlingTime = 0
+
+# --------------------------------------------------
+# Camera selection
+# --------------------------------------------------
+
+cameraID = 1
+recordPreset = R
+processingSetting = 2
+
+useDECamera = 0
+
+If $useDECamera == 1
+    deFramesPerSecond = 20
+    activeBinning = 2
+Else
+    activeBinning = $cameraBinning
+Endif
+
+angularRange = ABS($angleFinish - $angleBegin)
+acquisitionSeconds = $angularRange / $degreesPerSecond
+
+SelectCamera $cameraID
+CameraProperties
+
+Echo Camera pixel size: $reportedValue4 um
+
+SetBinning $recordPreset $activeBinning
+SetProcessing $recordPreset $processingSetting
+SetCameraArea $recordPreset F
+SetExposure $recordPreset $acquisitionSeconds 0
+
+If $useDECamera == 1
+    SetDECamFrameRate $deFramesPerSecond
+    Echo DE frame rate: $deFramesPerSecond fps
+Else
+    SetFrameTime $recordPreset $secondsPerFrame
+Endif
+
+Echo Rotation range: $angularRange degrees
+Echo Rotation rate: $degreesPerSecond degrees/sec
+Echo Acquisition duration: $acquisitionSeconds sec
+
+ReportCameraLength
+ReportSpotSize
+ReportPercentC2
+
+# --------------------------------------------------
+# Microscope preparation
+# --------------------------------------------------
+
+GoToLowDoseArea T
+GoToLowDoseArea R
+
+SetSlitIn 1
+UpdateLowDoseParams R 1
+
+Echo Energy-filter slit enabled
+
+SetBeamBlank 1
+
+# --------------------------------------------------
+# Move to the initial stage angle
+# --------------------------------------------------
+
+approachAngle = $angleBegin - 5
+
+Echo Moving to initial tilt angle
+
+TiltTo $approachAngle
+TiltTo $angleBegin
+
+If $stageSettlingTime > 0
+    Delay $stageSettlingTime sec
+Endif
+
+ScreenUp
+
+If $preAcquisitionWait > 0
+    Delay $preAcquisitionWait sec
+Endif
+
+# --------------------------------------------------
+# Continuous-rotation acquisition
+# --------------------------------------------------
+
+Echo Starting MicroED acquisition
+Echo End angle: $angleFinish degrees
+
+TiltDuringRecord $angleFinish 10 $stageRateIndex
+
+Echo Acquisition completed
+
+# --------------------------------------------------
+# Return to zero tilt
+# --------------------------------------------------
+
+TiltTo 0
+
+If $stageSettlingTime > 0
+    Delay $stageSettlingTime sec
+Endif
+
+Echo Stage returned to zero tilt
+
+ProgramTimeStamps
+
+If $useDECamera != 1
+    Delay 5 sec
+Endif
+
+CloseFile
+
+
+EndMacro
+
+
+MacroName ScreeningShot
+
+# =========== Save View image ===========
+ReportNavFile 1
+path_to_navfil = $repVal3
+
+ReportNavItem
+label = $NavLabel
+
+ReportDateTime
+times = $repVal2
+data = $repVal1
+
+GoToLowDoseArea T
+Delay 1
+GoToLowDoseArea R
+Delay 3
+Preview
+Delay 1
+
+SaveToOtherFile A JPG NONE $path_to_navfil\Diff_$data-$times_$label.jpg
+EndMacro
+
+
+MacroName ScreeningShotDamage
+
+### +++++++++++ parameters +++++++++++++
+
+binning = 2
+totalExposureTime = 180  #sec
+expTimeperFrame = 1       # sec per frame
+
+currentCamera = 1 #1 Rio, 2 K3
+darkgain = 2  # 0: unprocessed, 1: dark gain, 2: gain-norm
+recordMode = P #P:preview, R:Record
+ReportNavItem
+
+# =========== Save View image ===========
+ReportNavFile 1
+path_to_navfil = $repVal3
+
+ReportNavItem
+label = $NavLabel
+
+ReportDateTime
+times = $repVal2
+data = $repVal1
+
+GoToLowDoseArea T
+Delay 1
+GoToLowDoseArea R
+Delay 3
+
+#####################
+#   Camera setting
+#####################
+
+SelectCamera $currentCamera
+CameraProperties
+Echo Camera physical pixel size is $reportedValue4 um
+
+SetBinning $recordMode $binning
+SetProcessing $recordMode $darkgain
+SetCameraArea $recordMode F
+Echo Total exposure time $totalExposureTime s at $expTimeperFrame s/frame
+SetExposure $recordMode $totalExposureTime 0
+SetFrameTime $recordMode $expTimeperFrame
+
+Preview
+Delay 1
+
+SaveToOtherFile A JPG NONE $path_to_navfil\Diff_$data-$times_$label.jpg
+EndMacro
+
+
+
+
+MacroName BeforeTilt
+
+#====================================================
+# Parameters, Flashing, Dark Reference and Refill
+#====================================================
+
+# C-FEG flashing 
+FlashInterval := 8 * 3600 #[hrs x 3600]
+
+# Refill
+flash_when_refill := 1
+delay_after_refill = 5 # [min], Additional delay time after refilling
+darkRef_when_refill = 0
+update_dark = 0
+
+ReportTickTime
+initial_ticks = $repVal1
+#delay_after_refill
+
+CallFunction FlashingMonitor
+
+CallFunction WaitForRefilling 0 0
+
+Delay 1
+
+RealignToNavItem 1
+
+Call EMProperties
+
+Copy A P
+Delay 2
+ResetImageShift
+#MoveStage 0 -1
+#MoveStage 0 1
+CallFunction Funcs::CustomMoveStage 0 0
+TiltTo -1
+TiltTo 0
+TiltTo 0
+#ResetImageShift 
+Delay 2
+V
+
+
+
+Function FlashingMonitor 0 0
+   
+   IsVariableDefined last_flashing
+   If $repVal1 == 0
+      last_flashing := $initial_ticks
+   Endif 
+        
+   ReportTickTime current_ticks
+   flashing_elapsed_ticks = $current_ticks - $last_flashing
+   
+   If $flashing_elapsed_ticks >= $FlashInterval
+      echo ---> Flashing ...
+      LongOperation FF 0 # Flashing
+      ReportTickTime
+      last_flashing := $repVal1
+      FlashDisplay := 1
+   Else
+      flashed := 0
+   EndIf
+   
+EndFunction
+
+
+Function WaitForRefilling 0 0
+   
+   AreDewarsFilling  # report 1 for stage tank. report 2 for transfer tank.
+   
+   If $repVal1 >= 1
+      
+      LongOperation RS 0 RT 0
+      
+      # Flashing at a time
+      If $flash_when_refill == 1
+         LongOperation FF 0
+         ReportTickTime
+         last_flashing := $repVal1
+         flashed := 1
+      EndIf
+      
+      refilled := 1
+      
+      Loop 60
+         
+         Delay 30 sec
+         AreDewarsFilling 
+         
+         If $repVal1 == 0
+            Break 
+         EndIf
+         
+         Echo Still refilling
+         
+      EndLoop
+      
+      Echo ===> Waiting for the additional settling time of $delay_after_refill [min]
+      Delay $delay_after_refill min
+      Echo ===> LN2 refill completed.
+      
+   EndIf
+   
+EndFunction
+EndMacro
+
+
+MacroName AfterTilt
+V
+
+# =========== Save View image =========== 
+ReportNavFile 1
+path_to_navfil = $repVal3
+ReportNavItem 
+label = $NavLabel
+#label = $navAcqIndex
+ReportDateTime 
+times = $repVal2
+data = $repVal1
+
+CropCenterToSize A 512 512
+SaveToOtherFile A JPG NONE $path_to_navfil\View_$data-$times_$label.jpg
+
+GoToLowDoseArea T
+SetEucentricFocus 
+ResetDefocus 
+TiltTo 0
+ResetImageShift 
+
+
+EndMacro
