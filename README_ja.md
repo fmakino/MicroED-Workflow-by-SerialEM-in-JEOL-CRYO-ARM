@@ -90,7 +90,7 @@ camera IDとprocessingの対応は施設ごとに確認してください。
 
 1. GridをStageへLoadします。
 2. DigitalMicrographを起動し、Rioを選択します。
-3. SerialEMを起動します。別カメラに切り替わった場合はRioを選び直し、自動で始まったViewを停止します。
+3. SerialEMを起動します。別カメラに切り替わった場合は各自施設のメインカメラを選び直し、自動で始まったViewを停止します。
 4. TEM Centerで必要なEmission、flashing、Auto Emissionを設定します。
 5. View、Focus、Trial、Record、Preview、Mont-mapを確認します。RecordとPreviewではDiffraction modeとframe保存が必要です。具体値は施設ごとに設定してください。
 
@@ -161,11 +161,12 @@ camera IDとprocessingの対応は施設ごとに確認してください。
 
 ## 謝辞
 
-本READMEの測定ワークフローは、安達成彦氏作成の「230901-CRYOARM200_microED_マニュアル_v13」から対象部分を簡潔に整理したものです。同マニュアルには、牧野文信、柳澤春明、中根崇智、川本晃大、山田悠介の各氏への謝辞が記載されています。
+本READMEの測定ワークフローは、筑波大学　安達成彦氏作成の「CRYOARM200_microED_マニュアル」から対象部分を簡潔に整理したものです。
+このスクリプトに貢献して頂いた、牧野文信、柳澤春明、中根崇智、安達成彦、川本晃大、山田悠介の各氏への謝辞を申し上げます。
 
 ## 参考文献とコードの由来
 
-本workflowで以下を参照しました。
+本スクリプトで以下を参照しました。
  - CRmov ver. 1.1, 2019-03-02, M. Jason de la Cruz, MSKCC.
  - Takaba, K et al., JSB (2020)
 
